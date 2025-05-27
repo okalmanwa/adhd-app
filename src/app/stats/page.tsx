@@ -373,7 +373,7 @@ export default function StatsPage() {
       <span className="text-xs text-white/40">{format(weekStart, 'MMM d')} – {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
     </div>
     {/* Scrollable row of days */}
-    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar -mx-4 px-4">
       {dayStats.map((stat, i) => (
         stat.total > 0 ? (
           <motion.div

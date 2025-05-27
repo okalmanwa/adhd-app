@@ -123,7 +123,7 @@ export default function Nav() {
 
   return (
     <nav className="sticky top-0 z-50 bg-transparent backdrop-blur-md pt-4 border-b border-white/10 shadow-lg shadow-black/5 font-sans">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-6">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-8 py-6">
         {/* Logo */}
         <Link href="/" className="flex items-center z-20 font-sans">
           <img src="/logo.png" alt="FocusQuest" className="h-16 w-auto" />
@@ -224,7 +224,7 @@ export default function Nav() {
       >
         {mobileMenuOpen && (
           <div 
-            className="fixed inset-y-0 right-0 w-80 h-screen overflow-y-auto bg-gray-900/95 backdrop-blur-md border-l border-white/10 shadow-lg shadow-black/5 z-50"
+            className="fixed inset-y-0 right-0 w-[280px] sm:w-80 h-screen overflow-y-auto bg-gray-900/95 backdrop-blur-md border-l border-white/10 shadow-lg shadow-black/5 z-50"
             onClick={e => e.stopPropagation()}
           >
             {/* Menu content */}

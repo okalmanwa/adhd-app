@@ -292,7 +292,7 @@ export function QuestBuilder({ onSubmit, onClose, initialTask, selectedDate }: Q
           </div>
           <div>
             <label className="block text-sky-300 mb-2">Choose Your Avatar</label>
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-2 px-2">
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-4 px-4">
               {AVATAR_STYLES.map((style) => (
                 <motion.button
                   key={style.id}
