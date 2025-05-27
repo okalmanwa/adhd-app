@@ -1,3 +1,5 @@
+'use client';
+
 import { format, startOfMonth, subMonths, addMonths } from 'date-fns';
 import { useRouter } from 'next/navigation';
 

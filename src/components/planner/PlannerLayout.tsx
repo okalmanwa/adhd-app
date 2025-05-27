@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Task } from '@/types/rewards';
 import WeeklyPlannerHeader from '../weekly-planner/WeeklyPlannerHeader';

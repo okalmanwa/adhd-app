@@ -1,3 +1,5 @@
+'use client';
+
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks } from 'date-fns';
 import { useRouter } from 'next/navigation';
 

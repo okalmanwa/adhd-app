@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { QuestBuilder } from '@/components/QuestBuilder';
 import { Task } from '@/types/rewards';
