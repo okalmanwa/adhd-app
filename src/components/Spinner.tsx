@@ -1,4 +1,6 @@
-import { motion } from 'framer-motion';
+'use client';
+
+import { motion, type MotionProps } from 'framer-motion';
 import React from 'react';
 
 interface SpinnerProps {
