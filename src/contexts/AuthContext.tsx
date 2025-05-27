@@ -137,9 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!/[0-9]/.test(password)) {
         throw new Error('Password must contain at least one number');
       }
-      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-        throw new Error('Password must contain at least one special character');
-      }
 
       const { data, error } = await supabase.auth.signUp({
         email,

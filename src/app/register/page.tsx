@@ -44,11 +44,6 @@ export default function Register() {
       label: 'One number',
       regex: /[0-9]/,
       met: false
-    },
-    {
-      label: 'One special character (!@#$%^&*)',
-      regex: /[!@#$%^&*]/,
-      met: false
     }
   ], []);
 
