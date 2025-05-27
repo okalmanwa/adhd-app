@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { format, addDays } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, addDays, isSameWeek, isToday, startOfWeek, startOfMonth } from 'date-fns';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
 type ViewMode = 'week' | 'month';
 
@@ -14,6 +14,7 @@ interface WeeklyPlannerHeaderProps {
   onNextWeek: () => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onToday: () => void;
 }
 
 export default function WeeklyPlannerHeader({
@@ -24,59 +25,56 @@ export default function WeeklyPlannerHeader({
   onNextWeek,
   onPrevMonth,
   onNextMonth,
+  onToday,
 }: WeeklyPlannerHeaderProps) {
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const isCurrentWeek = isSameWeek(weekStart, new Date());
+  const isCurrentMonth = isSameWeek(monthStart, new Date());
+
+  const renderDateRange = () => {
+    const startMonth = format(weekStart, 'MMM');
+    const endMonth = format(addDays(weekStart, 6), 'MMM');
+    const startDay = format(weekStart, 'd');
+    const endDay = format(addDays(weekStart, 6), 'd');
+    const year = format(weekStart, 'yyyy');
+
+    if (startMonth === endMonth) {
+      return `${startMonth} ${startDay}–${endDay}, ${year}`;
+    }
+    return `${startMonth} ${startDay}–${endMonth} ${endDay}, ${year}`;
+  };
 
   return (
     <div className="mb-8">
-      {viewMode === 'month' ? (
-        <div className="sticky top-4 z-20 inline-flex items-center justify-between backdrop-blur-md bg-white/10 rounded-xl px-4 py-3 mb-6 shadow-lg border border-white/10 w-fit mx-auto">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onPrevMonth}
-              className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg"
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="text-sky-100 font-bold text-lg sm:text-xl md:text-2xl px-3 py-1 rounded-lg w-fit flex-grow-0 mx-auto text-center">
-              {months[monthStart.getMonth()]} {monthStart.getFullYear()}
-            </span>
-            <button
-              onClick={onNextMonth}
-              className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg"
-              aria-label="Next month"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
+      <div className="sticky top-4 z-20 flex items-center justify-center gap-4 backdrop-blur-md bg-white/10 rounded-xl px-4 py-3 mb-6 shadow-lg border border-white/10 w-full sm:w-fit mx-auto">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={viewMode === 'week' ? onPrevWeek : onPrevMonth}
+            className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg active:scale-95"
+            aria-label={viewMode === 'week' ? "Previous week" : "Previous month"}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          <button
+            onClick={onToday}
+            className={`px-4 py-2 rounded-lg transition-all ${
+              (viewMode === 'week' ? isCurrentWeek : isCurrentMonth)
+                ? 'bg-sky-500/30 text-sky-100' 
+                : 'bg-white/10 text-sky-300 hover:bg-white/20'
+            }`}
+          >
+            {viewMode === 'week' ? renderDateRange() : format(monthStart, 'MMMM yyyy')}
+          </button>
+
+          <button
+            onClick={viewMode === 'week' ? onNextWeek : onNextMonth}
+            className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg active:scale-95"
+            aria-label={viewMode === 'week' ? "Next week" : "Next month"}
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
-      ) : (
-        <div className="sticky top-4 z-20 inline-flex items-center justify-between backdrop-blur-md bg-white/10 rounded-xl px-4 py-3 mb-6 shadow-lg border border-white/10 w-fit mx-auto">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onPrevWeek}
-              className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg"
-              aria-label="Previous week"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="text-sky-100 font-bold text-lg sm:text-xl md:text-2xl px-3 py-1 rounded-lg w-fit flex-grow-0 mx-auto text-center">
-              {format(weekStart, 'MMMM d')}–{format(addDays(weekStart, 6), 'd, yyyy')}
-            </span>
-            <button
-              onClick={onNextWeek}
-              className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg"
-              aria-label="Next week"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 } 
