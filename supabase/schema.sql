@@ -10,6 +10,8 @@ CREATE TABLE tasks (
     urgency TEXT NOT NULL CHECK (urgency IN ('low', 'medium', 'high')),
     category TEXT NOT NULL CHECK (category IN ('study', 'chores', 'self-care', 'work', 'other')),
     deadline TIMESTAMP WITH TIME ZONE,
+    start_time TIMESTAMP WITH TIME ZONE,
+    end_time TIMESTAMP WITH TIME ZONE,
     notes TEXT,
     completed BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
@@ -31,6 +33,32 @@ BEGIN
         AND column_name = 'deadline'
     ) THEN
         ALTER TABLE tasks ADD COLUMN deadline TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
+
+-- Add start_time column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'tasks' 
+        AND column_name = 'start_time'
+    ) THEN
+        ALTER TABLE tasks ADD COLUMN start_time TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
+
+-- Add end_time column if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'tasks' 
+        AND column_name = 'end_time'
+    ) THEN
+        ALTER TABLE tasks ADD COLUMN end_time TIMESTAMP WITH TIME ZONE;
     END IF;
 END $$;
 

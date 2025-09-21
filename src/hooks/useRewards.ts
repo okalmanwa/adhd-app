@@ -191,6 +191,8 @@ export function useRewards() {
     if (!user) return null;
 
     try {
+      console.log('useRewards: Creating task with data:', task);
+      
       // Validate required fields
       if (!task.title?.trim()) {
         throw new Error('Task title is required');
@@ -204,12 +206,29 @@ export function useRewards() {
         throw new Error('Valid category is required');
       }
 
-      // Ensure deadline is in UTC format and set to 11:59 PM
+      // Ensure deadline is in UTC format (end_time becomes deadline)
       let deadline = task.deadline;
       if (deadline) {
         const deadlineDate = new Date(deadline);
-        deadlineDate.setHours(23, 59, 59, 999);
         deadline = deadlineDate.toISOString();
+      }
+
+      // Handle start_time and end_time
+      let start_time = task.start_time;
+      let end_time = task.end_time;
+      
+      if (start_time) {
+        const startDate = new Date(start_time);
+        start_time = startDate.toISOString();
+      }
+      
+      if (end_time) {
+        const endDate = new Date(end_time);
+        end_time = endDate.toISOString();
+        // Also set deadline to end_time if not already set
+        if (!deadline) {
+          deadline = end_time;
+        }
       }
 
       // Prepare task data
@@ -218,11 +237,15 @@ export function useRewards() {
         user_id: user.id,
         title: task.title.trim(),
         deadline,
+        start_time,
+        end_time,
         completed: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
+      console.log('useRewards: Inserting task data to Supabase:', taskData);
+      
       const { data, error } = await supabase
         .from('tasks')
         .insert([taskData])
@@ -238,6 +261,8 @@ export function useRewards() {
         });
         throw error;
       }
+      
+      console.log('useRewards: Task created successfully:', data);
 
       if (!data) {
         throw new Error('No data returned after task creation');

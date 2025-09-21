@@ -28,6 +28,8 @@ export interface Task {
   urgency: Urgency;
   category: Category;
   deadline?: string;
+  start_time?: string;
+  end_time?: string;
   estimated_minutes?: number;
   notes?: string;
   completed: boolean;

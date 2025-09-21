@@ -12,7 +12,7 @@ import { TaskCompletionAnimation } from '@/components/TaskCompletionAnimation';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
 import { format, addDays, subDays, isSameDay, parseISO, parse } from 'date-fns';
 import Nav from '@/components/Nav';
-import { Pencil, Trash2, CheckCircle, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, ChevronLeft, ChevronRight, Plus, Calendar } from 'lucide-react';
 import Footer from '@/components/Footer';
 import BrainRocket from '@/public/brain-rocket.svg';
 import { TaskCard } from '@/components/TaskCard';
@@ -20,6 +20,7 @@ import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { Spinner } from '@/components/Spinner';
 import { AllTasksCompletedCard } from '@/components/DailyTasks';
+import { CalendarSync } from '@/components/CalendarSync';
 
 // Animation variants
 const containerVariants = {
@@ -69,6 +70,7 @@ export default function DailyClient() {
   const [completedTask, setCompletedTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeMode, setActiveMode] = useState<'tasks' | 'pomodoro'>('tasks');
+  const [showCalendarSync, setShowCalendarSync] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date>(() => {
     const dateParam = searchParams.get('date');
     if (dateParam) {
@@ -157,18 +159,18 @@ export default function DailyClient() {
     console.log('Pomodoro session completed!');
   };
 
-  // Sort tasks by due date, then urgency
+  // Sort tasks by end time, then urgency
   const sortedTasks = [...tasks].sort((a, b) => {
-    const dateA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-    const dateB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    const dateA = a.end_time ? new Date(a.end_time).getTime() : Infinity;
+    const dateB = b.end_time ? new Date(b.end_time).getTime() : Infinity;
     if (dateA !== dateB) return dateA - dateB;
     return (urgencyOrder[a.urgency] ?? 3) - (urgencyOrder[b.urgency] ?? 3);
   });
 
   // Filter tasks for the selected day
   const filteredTasks = sortedTasks.filter(task => {
-    if (!task.deadline) return false;
-    const taskDate = new Date(task.deadline); // Parse as local time
+    if (!task.end_time) return false;
+    const taskDate = new Date(task.end_time); // Parse as local time
     return isSameDay(taskDate, selectedDay);
   });
 
@@ -185,41 +187,106 @@ export default function DailyClient() {
             <span className="font-bold">Heads up:</span> You're not logged in. Your tasks and progress will <span className="underline">not</span> be saved unless you <Link href="/login" className="text-mint-300 underline hover:text-mint-200">log in</Link> or <Link href="/register" className="text-mint-300 underline hover:text-mint-200">create an account</Link>.
           </div>
         )}
-        <div className="w-full max-w-[600px] mx-auto mt-8">
-          {/* Sticky Glassy Header */}
-          <div className="sticky top-4 z-20 flex items-center justify-between backdrop-blur-md bg-white/10 rounded-xl px-4 py-3 mb-6 shadow-lg border border-white/10">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSelectedDay(prev => subDays(prev, 1))}
-                className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg"
-                aria-label="Previous day"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-sky-100 font-bold text-lg sm:text-xl md:text-2xl px-3 py-1 rounded-lg">
-                {format(selectedDay, 'EEEE, MMMM d')}
-              </span>
-              <button
-                onClick={() => setSelectedDay(prev => addDays(prev, 1))}
-                className="p-2 rounded-lg bg-white/10 text-sky-300 hover:bg-white/20 transition-all text-base sm:text-lg"
-                aria-label="Next day"
-              >
-                <ChevronRight size={20} />
-              </button>
+        <div className="w-full max-w-[600px] sm:max-w-[800px] lg:max-w-[900px] mx-auto mt-8">
+          {/* Header */}
+          <div className="mb-6">
+            {/* Desktop Header */}
+            <div className="hidden sm:flex items-center justify-between mb-6">
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => setSelectedDay(prev => subDays(prev, 1))}
+                  className="group p-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 text-sky-300 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all duration-200 hover:scale-105"
+                  aria-label="Previous day"
+                >
+                  <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+                </button>
+                <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-mint-400 to-lavender-400">
+                  {format(selectedDay, 'EEEE, MMMM d')}
+                </h1>
+                <button
+                  onClick={() => setSelectedDay(prev => addDays(prev, 1))}
+                  className="group p-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 text-sky-300 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all duration-200 hover:scale-105"
+                  aria-label="Next day"
+                >
+                  <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowCalendarSync(true)}
+                  className="p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-sky-300 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all duration-200"
+                  aria-label="Sync with calendar"
+                >
+                  <Calendar size={20} />
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowQuestBuilder(true)}
+                  className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-mint-400 to-purple-400 text-gray-900 font-semibold shadow-lg hover:from-mint-300 hover:to-purple-300 transition-all"
+                  aria-label="Add new task"
+                >
+                  <Plus size={20} />
+                  <span>New Task</span>
+                </motion.button>
+              </div>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowQuestBuilder(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-mint-400 to-purple-400 text-gray-900 font-semibold shadow-md hover:from-mint-300 hover:to-purple-300 transition-all focus:outline-none focus:ring-2 focus:ring-mint-400"
-              aria-label="Add new task"
-            >
-              <Plus size={22} />
-              <span className="hidden sm:inline">New Task</span>
-            </motion.button>
+            
+            {/* Mobile Header */}
+            <div className="sm:hidden">
+              {/* Date Navigation */}
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setSelectedDay(prev => subDays(prev, 1))}
+                  className="group p-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 text-sky-300 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all duration-200 active:scale-95"
+                  aria-label="Previous day"
+                >
+                  <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+                </button>
+                <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-mint-400 to-lavender-400 text-center">
+                  {format(selectedDay, 'EEEE, MMM d')}
+                </h1>
+                <button
+                  onClick={() => setSelectedDay(prev => addDays(prev, 1))}
+                  className="group p-3 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 text-sky-300 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all duration-200 active:scale-95"
+                  aria-label="Next day"
+                >
+                  <ChevronRight size={20} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+                </button>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowCalendarSync(true)}
+                  className="flex-1 flex items-center justify-center gap-3 px-4 py-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 text-sky-300 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all"
+                  aria-label="Sync with calendar"
+                >
+                  <Calendar size={20} />
+                  <span className="text-sm font-medium">Sync</span>
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowQuestBuilder(true)}
+                  className="flex-1 flex items-center justify-center gap-3 px-4 py-4 rounded-2xl bg-gradient-to-r from-mint-400 to-purple-400 text-gray-900 font-semibold shadow-lg hover:from-mint-300 hover:to-purple-300 transition-all"
+                  aria-label="Add new task"
+                >
+                  <Plus size={20} />
+                  <span className="text-sm font-medium">New Task</span>
+                </motion.button>
+              </div>
+            </div>
           </div>
 
-          {/* Task List or Empty State */}
+          {/* Calendar-Style Task Timeline */}
           <AnimatePresence mode="wait">
             {filteredTasks.length === 0 ? (
               <motion.div
@@ -229,112 +296,21 @@ export default function DailyClient() {
                 exit={{ opacity: 0, y: -20 }}
                 className="flex flex-col items-center justify-center py-24 text-center relative"
               >
-                {/* Static Meditating Figure SVG */}
+                {/* Clean empty state */}
                 <div className="mb-6 z-10">
-                  <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    {/* Head */}
-                    <circle cx="45" cy="25" r="10" fill="#f9fafb" stroke="#a5b4fc" strokeWidth="2" />
-                    {/* Body */}
-                    <ellipse cx="45" cy="50" rx="13" ry="18" fill="#a5b4fc" />
-                    {/* Legs (crossed) */}
-                    <path d="M32 70 Q45 60 58 70" stroke="#6ee7b7" strokeWidth="4" fill="none" />
-                    <path d="M38 68 Q45 65 52 68" stroke="#6ee7b7" strokeWidth="3" fill="none" />
-                    {/* Arms (resting on knees) */}
-                    <path d="M32 55 Q25 60 35 65" stroke="#f472b6" strokeWidth="3" fill="none" />
-                    <path d="M58 55 Q65 60 55 65" stroke="#f472b6" strokeWidth="3" fill="none" />
-                    {/* Face (simple smile) */}
-                    <path d="M42 28 Q45 31 48 28" stroke="#6ee7b7" strokeWidth="2" fill="none" strokeLinecap="round" />
-                    {/* Aura */}
-                    <ellipse cx="45" cy="50" rx="20" ry="25" fill="#f0abfc" fillOpacity="0.12" />
-                  </svg>
+                  <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                    <Calendar size={32} className="text-white/40" />
+                  </div>
                 </div>
-                {/* Main Message with Letter Animation */}
                 <div className="relative mb-4">
-                  <p className="text-xl sm:text-2xl font-medium relative">
-                    {"Nothing's planned for today.".split('').map((char, i) => (
-                      <motion.span
-                        key={i}
-                        className="inline-block"
-                        animate={{ color: [ '#f9fafb', '#a5b4fc', '#6ee7b7', '#f0abfc', '#f472b6', '#facc15', '#38bdf8', '#f9fafb' ] }}
-                        transition={{
-                          color: {
-                            duration: 4,
-                            repeat: Infinity,
-                            repeatType: "loop",
-                            ease: "linear",
-                            delay: i * 0.1
-                          }
-                        }}
-                      >
-                        {char === ' ' ? '\u00A0' : char}
-                      </motion.span>
-                    ))}
+                  <p className="text-xl font-medium text-white/80">
+                    No tasks scheduled
                   </p>
                 </div>
                 <div className="relative mb-8">
-                  <p className="text-base relative">
-                    {"Take the day as it comes — or set a new intention".split('').map((char, i) => (
-                      <motion.span
-                        key={i}
-                        className="inline-block"
-                        animate={{ color: [ '#6ee7b7', '#a5b4fc', '#f0abfc', '#f472b6', '#facc15', '#38bdf8', '#6ee7b7' ] }}
-                        transition={{
-                          color: {
-                            duration: 4,
-                            repeat: Infinity,
-                            repeatType: "loop",
-                            ease: "linear",
-                            delay: i * 0.1
-                          }
-                        }}
-                      >
-                        {char === ' ' ? '\u00A0' : char}
-                      </motion.span>
-                    ))}
+                  <p className="text-base text-white/50">
+                    Add your first task to get started
                   </p>
-                </div>
-                {/* Twinkling stars background */}
-                <div
-                  className="fixed left-0 top-0 w-full h-full pointer-events-none select-none z-0"
-                  style={{ pointerEvents: 'none', zIndex: 0 }}
-                  aria-hidden="true"
-                >
-                  {Array.from({ length: 50 }).map((_, i) => {
-                    const colors = [
-                      '#f9fafb', '#facc15', '#6ee7b7', '#a5b4fc', '#f472b6', '#38bdf8', '#f0abfc', '#fca5a5', '#fcd34d', '#bbf7d0', '#818cf8', '#fda4af', '#67e8f9', '#c4b5fd', '#fef08a', '#fca5a5'
-                    ];
-                    const x = Math.random() * viewportWidth;
-                    const y = Math.random() * viewportHeight;
-                    const size = 2 + Math.random() * 4;
-                    const color = colors[Math.floor(Math.random() * colors.length)];
-                    const delay = Math.random() * 2;
-                    const duration = 1 + Math.random() * 2;
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{
-                          opacity: [0, 1, 0],
-                          scale: [0, 1, 0],
-                        }}
-                        transition={{
-                          duration,
-                          delay,
-                          repeat: Infinity,
-                          repeatType: 'loop',
-                          ease: 'easeInOut',
-                        }}
-                        className="absolute"
-                        style={{
-                          left: x,
-                          top: y,
-                          transform: 'translate(-50%, -50%)',
-                        }}
-                      >
-                        <Star size={size} color={color} />
-                      </motion.div>
-                    );
-                  })}
                 </div>
               </motion.div>
             ) : filteredTasks.filter(task => !task.completed).length === 0 ? (
@@ -342,188 +318,207 @@ export default function DailyClient() {
             ) : (
               <motion.div
                 key="active-tasks"
-                className="space-y-3 w-full"
+                className="w-full"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                {filteredTasks.filter(task => !task.completed).map((task, idx) => {
-                  // Fallback key for guest tasks if id is missing or not unique
-                  const key = task.id || `${task.title}-${task.deadline || ''}-${idx}`;
-                  const isExpanded = expandedTaskIds.includes(task.id);
-                  const isOverdue = task.deadline && new Date(task.deadline) < new Date() && !task.completed;
-                  const priorityLabel = task.urgency.charAt(0).toUpperCase() + task.urgency.slice(1);
-                  const priorityColors = {
-                    high: 'bg-red-500 text-white',
-                    medium: 'bg-yellow-400 text-black',
-                    low: 'bg-green-600 text-white',
-                  };
-                  const priorityColor = priorityColors[task.urgency] || 'bg-gray-500 text-white';
-                  const avatarUrl = task.avatar ?
-                    `https://api.dicebear.com/7.x/${task.avatar.split(':')[0]}/svg?seed=${task.avatar.split(':')[1]}` : undefined;
-                  const categoryColors = {
-                    'study': 'bg-blue-600',
-                    'chores': 'bg-orange-500',
-                    'self-care': 'bg-pink-500',
-                    'work': 'bg-green-600',
-                    'other': 'bg-gray-500',
-                  };
-                  return (
-                    <motion.div
-                      key={key}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex flex-col gap-2 p-4 rounded-xl bg-gradient-to-br from-[#412f61] to-[#4a0575] text-white shadow-md border border-white/10 hover:shadow-purple-500/30 hover:-translate-y-1 transition-all duration-200 mb-3"
-                      tabIndex={0}
-                    >
-                      {/* Top Row */}
-                      <div className="flex justify-between items-start flex-wrap gap-2">
-                        <div className="flex items-start gap-4 min-w-0">
-                          {/* Avatar with urgency glow */}
-                          {avatarUrl && (
-                            <img
-                              src={avatarUrl}
-                              alt="Avatar"
-                              className={
-                                `w-10 h-10 rounded-full shadow ring-4 ring-offset-2 ring-offset-[#412f61] ` +
-                                (task.urgency === 'high'
-                                  ? 'ring-red-400/80'
-                                  : task.urgency === 'medium'
-                                  ? 'ring-yellow-300/80'
-                                  : 'ring-green-400/80')
-                              }
-                            />
-                          )}
-                          <div className="space-y-1 min-w-0">
-                            {/* Title row */}
-                            <h3 className="font-semibold text-lg leading-tight break-words" title={task.title}>{task.title}</h3>
-                            {/* Badges, show/hide, and urgency circle row */}
-                            <div className="flex flex-row items-center w-full mt-1">
-                              <div className="flex flex-row items-center gap-2 flex-wrap flex-1 min-w-0">
-                                {task.deadline && (
-                                  <span className="bg-purple-600 px-2 py-0.5 rounded-full text-white/90">
-                                    Due: {format(new Date(task.deadline), 'MMM d, h:mm a')}
-                                  </span>
-                                )}
-                                <span className={`px-2 py-0.5 rounded-full text-white/90 ${categoryColors[task.category] || 'bg-gray-500'}`}>{task.category.charAt(0).toUpperCase() + task.category.slice(1)}</span>
-                                {task.description && (
-                                  <button
-                                    className="flex items-center gap-1 text-xs text-mint-300 hover:text-mint-200 focus:outline-none select-none cursor-pointer group"
-                                    onClick={() => setExpandedTaskIds(ids => ids.includes(task.id) ? ids.filter(id => id !== task.id) : [...ids, task.id])}
-                                    aria-expanded={isExpanded}
-                                    aria-controls={`desc-${task.id}`}
+                {/* Timeline Container */}
+                <div className="relative">
+                  {/* Current Time Indicator */}
+                  {isToday && (
+                    <div className="absolute left-12 right-0 z-10" style={{
+                      top: `${((new Date().getHours() - 7) * 64 + (new Date().getMinutes() / 60) * 64)}px`
+                    }}>
+                      <div className="flex items-center">
+                        <div className="flex-1 h-px bg-red-500"></div>
+                        <div className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                          {format(new Date(), 'h:mm a')}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Timeline Grid */}
+                  <div className="space-y-1">
+                    {Array.from({ length: 16 }, (_, i) => {
+                      const hour = 7 + i;
+                      const timeStr = hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+                      const isCurrentHour = isToday && new Date().getHours() === hour;
+                      
+                      return (
+                        <div key={hour} className="relative h-16 flex items-center">
+                          {/* Hour Label */}
+                          <div className="w-12 text-xs text-white/40 font-medium">
+                            {timeStr}
+                          </div>
+                          
+                          {/* Timeline Line */}
+                          <div className="flex-1 h-px bg-white/10 relative">
+                            {/* Current hour line is handled by the current time indicator above */}
+                          </div>
+                          
+                          {/* Tasks for this hour */}
+                          <div className="absolute left-12 right-0 top-0 bottom-0">
+                            {filteredTasks
+                              .filter(task => !task.completed && task.start_time)
+                              .filter(task => {
+                                const taskHour = new Date(task.start_time!).getHours();
+                                return taskHour === hour;
+                              })
+                              .map((task, taskIdx) => {
+                                const isOverdue = task.end_time && new Date(task.end_time) < new Date() && !task.completed;
+                                const urgencyColors = {
+                                  high: 'bg-red-500/20 border-red-500/50 text-red-200',
+                                  medium: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-200',
+                                  low: 'bg-green-500/20 border-green-500/50 text-green-200',
+                                };
+                                const urgencyColor = urgencyColors[task.urgency] || 'bg-gray-500/20 border-gray-500/50 text-gray-200';
+                                
+                                // Calculate position based on start time
+                                const startTime = new Date(task.start_time!);
+                                const startMinutes = startTime.getMinutes();
+                                const topPosition = (startMinutes / 60) * 64; // 64px per hour
+                                
+                                // Calculate height based on duration
+                                const endTime = new Date(task.end_time!);
+                                const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+                                const height = Math.max(32, (durationMinutes / 60) * 64); // Minimum 32px height
+                                
+                                return (
+                                  <motion.div
+                                    key={task.id || `${task.title}-${taskIdx}`}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className={`absolute rounded-lg border p-3 cursor-pointer hover:bg-white/5 transition-all duration-200 ${urgencyColor} ${
+                                      isOverdue ? 'ring-2 ring-red-400/50' : ''
+                                    }`}
+                                    style={{
+                                      top: `${topPosition}px`,
+                                      height: `${height}px`,
+                                      width: 'calc(100% - 8px)',
+                                      left: '4px'
+                                    }}
+                                    onClick={() => {
+                                      setEditingTask(task);
+                                      setShowQuestBuilder(true);
+                                    }}
                                   >
-                                    <motion.div
-                                      animate={{ 
-                                        rotate: isExpanded ? 360 : 0,
-                                        scale: isExpanded ? 1.1 : 1
-                                      }}
-                                      transition={{ duration: 0.3 }}
-                                      className="w-5 h-5 group-hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] transition-all duration-200"
-                                    >
-                                      {isExpanded ? (
-                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                                          <path d="M4 8H20C21.1046 8 22 8.89543 22 10V18C22 19.1046 21.1046 20 20 20H4C2.89543 20 2 19.1046 2 18V10C2 8.89543 2.89543 8 4 8Z" 
-                                            stroke="currentColor" 
-                                            strokeWidth="2" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round"
-                                            className="text-mint-300 group-hover:text-green-400 transition-colors duration-200"
-                                          />
-                                          <path d="M2 10L12 14L22 10" 
-                                            stroke="currentColor" 
-                                            strokeWidth="2" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round"
-                                            className="text-mint-300 group-hover:text-green-400 transition-colors duration-200"
-                                          />
-                                          <path d="M12 14V20" 
-                                            stroke="currentColor" 
-                                            strokeWidth="2" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round"
-                                            className="text-mint-300 group-hover:text-green-400 transition-colors duration-200"
-                                          />
-                                          <path d="M8 8V6C8 4.89543 8.89543 4 10 4H14C15.1046 4 16 4.89543 16 6V8" 
-                                            stroke="currentColor" 
-                                            strokeWidth="2" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round"
-                                            className="text-mint-300 group-hover:text-green-400 transition-colors duration-200"
-                                          />
-                                        </svg>
-                                      ) : (
-                                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                                          <path d="M7 4H17C18.1046 4 19 4.89543 19 6V18C19 19.1046 18.1046 20 17 20H7C5.89543 20 5 19.1046 5 18V6C5 4.89543 5.89543 4 7 4Z" 
-                                            stroke="currentColor" 
-                                            strokeWidth="2" 
-                                            strokeLinecap="round" 
-                                            strokeLinejoin="round"
-                                            className="text-mint-300 group-hover:text-green-400 transition-colors duration-200"
-                                          />
-                                          <path d="M9 8H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="group-hover:text-green-400 transition-colors duration-200"/>
-                                          <path d="M9 12H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="group-hover:text-green-400 transition-colors duration-200"/>
-                                          <path d="M9 16H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="group-hover:text-green-400 transition-colors duration-200"/>
-                                          <path d="M12 4V2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="group-hover:text-green-400 transition-colors duration-200"/>
-                                        </svg>
-                                      )}
-                                    </motion.div>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
+                                    <div className="flex items-center justify-between h-full">
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-sm truncate">
+                                          {task.title}
+                                        </h4>
+                                        {task.end_time && (
+                                          <p className="text-xs opacity-70 mt-1">
+                                            {format(new Date(task.start_time!), 'h:mm a')} - {format(new Date(task.end_time), 'h:mm a')}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-1 ml-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCompleteTask(task);
+                                          }}
+                                          className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                                        >
+                                          <CheckCircle size={16} className="text-green-400" />
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteTask(task.id);
+                                          }}
+                                          className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                                        >
+                                          <Trash2 size={16} className="text-red-400" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                );
+                              })}
                           </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Tasks without specific times */}
+                  {filteredTasks.filter(task => !task.completed && !task.start_time).length > 0 && (
+                    <div className="mt-8">
+                      <h3 className="text-sm font-medium text-white/60 mb-4">Unscheduled Tasks</h3>
+                      <div className="space-y-2">
+                        {filteredTasks
+                          .filter(task => !task.completed && !task.start_time)
+                          .map((task, idx) => {
+                            const isOverdue = task.end_time && new Date(task.end_time) < new Date() && !task.completed;
+                            const urgencyColors = {
+                              high: 'bg-red-500/10 border-red-500/30 text-red-200',
+                              medium: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-200',
+                              low: 'bg-green-500/10 border-green-500/30 text-green-200',
+                            };
+                            const urgencyColor = urgencyColors[task.urgency] || 'bg-gray-500/10 border-gray-500/30 text-gray-200';
+                            
+                            return (
+                              <motion.div
+                                key={task.id || `${task.title}-unscheduled-${idx}`}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`rounded-lg border p-4 cursor-pointer hover:bg-white/5 transition-all duration-200 ${urgencyColor} ${
+                                  isOverdue ? 'ring-2 ring-red-400/50' : ''
+                                }`}
+                                onClick={() => {
+                                  setEditingTask(task);
+                                  setShowQuestBuilder(true);
+                                }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="font-medium text-white">
+                                      {task.title}
+                                    </h4>
+                                    {task.description && (
+                                      <p className="text-sm text-white/60 mt-1 line-clamp-2">
+                                        {task.description}
+                                      </p>
+                                    )}
+                                    {task.end_time && (
+                                      <p className="text-xs text-white/50 mt-2">
+                                        Due: {format(new Date(task.end_time), 'MMM d, h:mm a')}
+                                        {isOverdue && <span className="text-red-400 ml-2">Overdue</span>}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-1 ml-4">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCompleteTask(task);
+                                      }}
+                                      className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                    >
+                                      <CheckCircle size={18} className="text-green-400" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteTask(task.id);
+                                      }}
+                                      className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                    >
+                                      <Trash2 size={18} className="text-red-400" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
                       </div>
-                      {/* Collapsible Description/Notes */}
-                      {isExpanded && task.description && (
-                        <div id={`desc-${task.id}`} className="mt-2 whitespace-pre-line text-sm text-white/80">
-                          {task.description}
-                        </div>
-                      )}
-                      {/* Bottom Action Row */}
-                      <div className="flex justify-end gap-3 mt-1">
-                        <button
-                          onClick={() => {
-                            setEditingTask(task);
-                            setShowQuestBuilder(true);
-                          }}
-                          className="hover:text-sky-400 transition-colors cursor-pointer"
-                          aria-label="Edit task"
-                          title="Edit Task"
-                          tabIndex={0}
-                          role="button"
-                          onKeyDown={e => { if (e.key === 'Enter') { setEditingTask(task); setShowQuestBuilder(true); } }}
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          className="hover:text-rose-400 transition-colors cursor-pointer"
-                          aria-label="Delete task"
-                          title="Delete Task"
-                          tabIndex={0}
-                          role="button"
-                          onKeyDown={e => { if (e.key === 'Enter') handleDeleteTask(task.id); }}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleCompleteTask(task)}
-                          className="hover:text-green-400 transition-colors cursor-pointer"
-                          aria-label="Mark task complete"
-                          title="Mark as Done"
-                          tabIndex={0}
-                          role="button"
-                          onKeyDown={e => { if (e.key === 'Enter') handleCompleteTask(task); }}
-                        >
-                          <CheckCircle size={18} />
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -553,6 +548,12 @@ export default function DailyClient() {
             }}
             initialTask={editingTask}
             selectedDate={selectedDay}
+          />
+        )}
+        {showCalendarSync && (
+          <CalendarSync
+            tasks={filteredTasks}
+            onClose={() => setShowCalendarSync(false)}
           />
         )}
         {showCompletionAnimation && completedTask && (

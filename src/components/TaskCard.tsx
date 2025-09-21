@@ -106,14 +106,24 @@ function TaskCard({ task, isCompact = false, onEdit, onDelete, onComplete }: Tas
               {task.description}
             </p>
           )}
-          {isCompact && task.deadline && (
+          {isCompact && task.end_time && (
             <div className={`mt-1 text-xs ${task.completed ? 'text-gray-500' : 'text-sky-300/50'}`}>
-              Due: {format(new Date(task.deadline), 'h:mm a')}
+              Due: {format(new Date(task.end_time), 'h:mm a')}
             </div>
           )}
-          {!isCompact && task.deadline && (
+          {isCompact && task.start_time && task.end_time && (
+            <div className={`mt-1 text-xs ${task.completed ? 'text-gray-500' : 'text-blue-300/70'}`}>
+              {format(new Date(task.start_time), 'h:mm a')} - {format(new Date(task.end_time), 'h:mm a')}
+            </div>
+          )}
+          {!isCompact && task.end_time && (
             <div className={`mt-1 text-xs ${task.completed ? 'text-gray-500' : 'text-sky-300/50'}`}>
-              Due: {format(new Date(task.deadline), 'MMM d, yyyy, h:mm a')}
+              Due: {format(new Date(task.end_time), 'MMM d, yyyy, h:mm a')}
+            </div>
+          )}
+          {!isCompact && task.start_time && task.end_time && (
+            <div className={`mt-1 text-xs ${task.completed ? 'text-gray-500' : 'text-blue-300/70'}`}>
+              Time: {format(new Date(task.start_time), 'h:mm a')} - {format(new Date(task.end_time), 'h:mm a')}
             </div>
           )}
         </div>

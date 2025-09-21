@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { Task } from '@/types/task';
+import { Task } from '@/types/rewards';
 
 export async function GET() {
   const cookieStore = await cookies();

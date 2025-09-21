@@ -60,9 +60,8 @@ export default function DailyTasks() {
   const handleCreateTask = async () => {
     try {
       setIsSaving(true);
-      // Use the selected date at 11:59 PM
+      // Use the selected date
       const deadlineDate = new Date(selectedDate);
-      deadlineDate.setHours(23, 59, 59, 999);
       
       const taskToCreate = {
         ...newTask,
@@ -74,9 +73,8 @@ export default function DailyTasks() {
       
       await createTask(taskToCreate);
       
-      // Reset form with the current selected date at 11:59 PM
+      // Reset form with the current selected date
       const resetDate = new Date(selectedDate);
-      resetDate.setHours(23, 59, 59, 999);
       setNewTask({
         title: '',
         description: '',

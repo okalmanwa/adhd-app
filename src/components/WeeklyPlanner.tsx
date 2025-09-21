@@ -140,14 +140,14 @@ export default function WeeklyPlanner({ initialViewMode = 'week' }: WeeklyPlanne
     });
 
     tasks.forEach(task => {
-      if (task.deadline && !task.completed) {
+      if (task.end_time && !task.completed) {
         let taskDate: Date | null = null;
         try {
           // Always parse as ISO string (UTC) for consistency
-          taskDate = typeof task.deadline === 'string' ? new Date(task.deadline) : null;
+          taskDate = typeof task.end_time === 'string' ? new Date(task.end_time) : null;
           if (!taskDate || isNaN(taskDate.getTime())) {
             // Fallback: try parsing with date-fns if needed
-            taskDate = parse(task.deadline as string, "yyyy-MM-dd'T'HH:mm:ss.SSS", new Date());
+            taskDate = parse(task.end_time as string, "yyyy-MM-dd'T'HH:mm:ss.SSS", new Date());
           }
           if (!taskDate || isNaN(taskDate.getTime())) {
             console.warn('Invalid date for task:', task);
@@ -259,18 +259,18 @@ export default function WeeklyPlanner({ initialViewMode = 'week' }: WeeklyPlanne
     const task = tasks.find(t => t.id === active.id);
     const targetDateStr = over.id as string;
 
-    if (task && task.deadline) {
+    if (task && task.end_time) {
       // Get the current task's date (keeping the time)
-      const currentDate = new Date(task.deadline);
+      const currentDate = new Date(task.end_time);
       // Parse the target date and set the same time
       const targetDate = parse(targetDateStr, 'yyyy-MM-dd', new Date());
-      targetDate.setHours(23, 59, 0, 0);
+      targetDate.setHours(currentDate.getHours(), currentDate.getMinutes(), currentDate.getSeconds(), currentDate.getMilliseconds());
 
       // Only update if the date actually changed
       if (format(currentDate, 'yyyy-MM-dd') !== format(targetDate, 'yyyy-MM-dd')) {
       const updatedTask = {
         ...task,
-          deadline: format(targetDate, "yyyy-MM-dd'T'HH:mm:ss.SSS")
+          end_time: format(targetDate, "yyyy-MM-dd'T'HH:mm:ss.SSS")
       };
       await handleTaskUpdate(updatedTask);
       }
@@ -293,8 +293,8 @@ export default function WeeklyPlanner({ initialViewMode = 'week' }: WeeklyPlanne
     const stats = weekDays.map(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
       const dayTasks = tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
+        if (!task.end_time) return false;
+        const taskDate = new Date(task.end_time);
         return format(taskDate, 'yyyy-MM-dd') === dateStr;
       });
       
@@ -336,8 +336,8 @@ export default function WeeklyPlanner({ initialViewMode = 'week' }: WeeklyPlanne
     return last14Days.map(date => {
       const dateStr = format(date, 'yyyy-MM-dd');
       const dayTasks = tasks.filter(task => {
-        if (!task.deadline) return false;
-        const taskDate = new Date(task.deadline);
+        if (!task.end_time) return false;
+        const taskDate = new Date(task.end_time);
         return format(taskDate, 'yyyy-MM-dd') === dateStr;
       });
       return {
@@ -439,6 +439,14 @@ export default function WeeklyPlanner({ initialViewMode = 'week' }: WeeklyPlanne
   const handleAnimationComplete = () => {
     setShowCompletionAnimation(false);
     setCompletedTask(null);
+  };
+
+  const handleToday = () => {
+    if (viewMode === 'week') {
+      setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    } else {
+      setMonthStart(startOfMonth(new Date()));
+    }
   };
 
   if (isLoading) {
